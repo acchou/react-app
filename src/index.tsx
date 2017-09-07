@@ -69,16 +69,20 @@ class Game extends React.Component<{}, GameState> {
             return;
         }
 
-        board[i] = this.state.turn;
-        const turn = this.state.turn === "X" ? "O" : "X";
-        this.setState({ history: history.concat([board]), turn: turn });
+        this.setState((prevState, props) => {
+            board[i] = prevState.turn;
+            const turn = prevState.turn === "X" ? "O" : "X";
+            return { history: history.concat([board]), turn: turn };
+        });
     }
 
     jumpTo(move: number) {
-        const history = this.state.history;
-        this.setState({
-            history: history.slice(0, move + 1),
-            turn: move % 2 === 0 ? "X" : "O"
+        this.setState((prevState, props) => {
+            const history = prevState.history;
+            return {
+                history: history.slice(0, move + 1),
+                turn: move % 2 === 0 ? "X" : "O"
+            };
         });
     }
 
