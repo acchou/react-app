@@ -2,47 +2,34 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import "./index.css";
 
+type SquareState = "X" | "O" | null;
+
 interface SquareProps {
-    value: number;
+    value: SquareState;
+    onClick: () => void;
 }
 
-interface SquareState {
-    value: string | null;
+function Square(props: SquareProps) {
+    return (
+        <button className="square" onClick={props.onClick}>
+            {props.value}
+        </button>
+    );
 }
 
-class Square extends React.Component<SquareProps, SquareState> {
-    constructor() {
-        super();
-        this.state = {
-            value: null
-        };
-    }
-
-    render() {
-        return (
-            <button
-                className="square"
-                onClick={() => {
-                    this.setState({ value: "X" });
-                }}
-            >
-                {this.state.value}
-            </button>
-        );
-    }
+interface BoardProps {
+    board: SquareState[];
+    onClick: (i: number) => void;
 }
 
-class Board extends React.Component {
+class Board extends React.Component<BoardProps> {
     renderSquare(i: number) {
-        return <Square value={i} />;
+        return <Square value={this.props.board[i]} onClick={() => this.props.onClick(i)} />;
     }
 
     render() {
-        const status = "Next player: X";
-
         return (
             <div>
-                <div className="status">{status}</div>
                 <div className="board-row">
                     {this.renderSquare(0)}
                     {this.renderSquare(1)}
@@ -63,20 +50,97 @@ class Board extends React.Component {
     }
 }
 
-class Game extends React.Component {
+interface GameState {
+    history: SquareState[][];
+    turn: "X" | "O";
+}
+
+class Game extends React.Component<{}, GameState> {
+    constructor() {
+        super();
+        this.state = { history: [new Array(9).fill(null)], turn: "X" };
+    }
+
+    handleClick(i: number) {
+        const history = this.state.history;
+        const board = history[history.length - 1].slice();
+
+        if (calculateWinner(board) || board[i]) {
+            return;
+        }
+
+        board[i] = this.state.turn;
+        const turn = this.state.turn === "X" ? "O" : "X";
+        this.setState({ history: history.concat([board]), turn: turn });
+    }
+
+    jumpTo(move: number) {
+        const history = this.state.history;
+        this.setState({
+            history: history.slice(0, move + 1),
+            turn: move % 2 === 0 ? "X" : "O"
+        });
+    }
+
     render() {
+        const history = this.state.history;
+        const board = history[history.length - 1];
+
+        const moves = history.map((steps, move) => {
+            const desc = move ? "Move #" + move : "Game start";
+            return (
+                <li key={move}>
+                    <a href="#" onClick={() => this.jumpTo(move)}>
+                        {desc}
+                    </a>
+                </li>
+            );
+        });
+
+        const winner = calculateWinner(board);
+        let status;
+        if (winner) {
+            status = "Winner: " + winner;
+        } else {
+            status = "Next player: " + this.state.turn;
+        }
+
         return (
             <div className="game">
                 <div className="game-board">
-                    <Board />
+                    <Board
+                        board={this.state.history[this.state.history.length - 1]}
+                        onClick={i => this.handleClick(i)}
+                    />
                 </div>
                 <div className="game-info">
-                    <div>{/* status */}</div>
-                    <ol>{/* TODO */}</ol>
+                    <div className="status">{status}</div>
+                    <ol>{moves}</ol>
                 </div>
             </div>
         );
     }
+}
+
+function calculateWinner(board: SquareState[]) {
+    const lines = [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6]
+    ];
+
+    for (let i = 0; i < lines.length; i++) {
+        const [a, b, c] = lines[i];
+        if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+            return board[a];
+        }
+    }
+    return null;
 }
 
 // ========================================
