@@ -55,6 +55,24 @@ interface GameState {
     turn: "X" | "O";
 }
 
+interface ListItemMoveHistoryProps {
+    move: number;
+    onClick: (move: number) => void;
+}
+
+function ListItemMoveHistory(props: ListItemMoveHistoryProps) {
+    const move = props.move;
+    const desc = move ? "Move #" + move : "Game start";
+    const handleClick = () => props.onClick(move);
+    return (
+        <li key={move}>
+            <a href="#" onClick={handleClick}>
+                {desc}
+            </a>
+        </li>
+    );
+}
+
 class Game extends React.Component<{}, GameState> {
     constructor() {
         super();
@@ -76,7 +94,7 @@ class Game extends React.Component<{}, GameState> {
         });
     }
 
-    jumpTo(move: number) {
+    jumpTo = (move: number) => {
         this.setState((prevState, props) => {
             const history = prevState.history;
             return {
@@ -84,21 +102,14 @@ class Game extends React.Component<{}, GameState> {
                 turn: move % 2 === 0 ? "X" : "O"
             };
         });
-    }
+    };
 
     render() {
         const history = this.state.history;
         const board = history[history.length - 1];
 
         const moves = history.map((steps, move) => {
-            const desc = move ? "Move #" + move : "Game start";
-            return (
-                <li key={move}>
-                    <a href="#" onClick={() => this.jumpTo(move)}>
-                        {desc}
-                    </a>
-                </li>
-            );
+            return <ListItemMoveHistory key={move} move={move} onClick={this.jumpTo} />;
         });
 
         const winner = calculateWinner(board);
